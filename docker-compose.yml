@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  db:
+#   Use the Docker Image postgres. This will pull the newest release.
+    image: "postgres"
+#   Give the container the name my_postgres. You can changes to something else.
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    container_name: "my_postgres1"
+#   Setup the username, password, and database name. You can changes these values.
+    environment:
+      - POSTGRES_USER=john
+      - POSTGRES_PASSWORD=pwd0123456789
+      - POSTGRES_DB=mydb
+#   Maps port 54320 (localhost) to port 5432 on the container. You can change the ports to fix your needs.
+    ports:
+      - "54320:5432"
+#   Set a volume some that database is not lost after shutting down the container.
+#   I used the name postgres-data but you can changed it to something else.
+    
+  
+  
+  graphql-engine:
+    image: hasura/graphql-engine:v1.0.0-alpha38
+    ports:
+    - "8080:8080"
+    depends_on:
+    - "db"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://john:pwd0123456789@my_postgres1:5432/mydb
+      #HASURA_GRAPHQL_ACCESS_KEY: mylongsecretkey
+    command:
+      - graphql-engine
+      - serve
+      - --enable-console
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db    
+volumes:
+  pgdata:
+     external: true 
